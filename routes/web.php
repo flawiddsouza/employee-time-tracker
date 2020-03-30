@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
+Route::get('/', function() {
     if(Auth::check()) {
         return view('home');
     } else {
@@ -11,3 +9,14 @@ Route::get('/', function () {
 });
 
 Auth::routes();
+
+Route::middleware('auth')->group(function() {
+
+    Route::prefix('/time-tracker')->group(function() {
+        Route::get('/times', 'TimeTrackerController@getTimes');
+        Route::get('/active-track', 'TimeTrackerController@getActiveTrack');
+        Route::post('/start', 'TimeTrackerController@startTracking');
+        Route::put('/stop/{timeId}', 'TimeTrackerController@stopTracking');
+    });
+
+});

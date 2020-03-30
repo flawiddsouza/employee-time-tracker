@@ -6,3 +6,10 @@
 
 // Bootstrap
 @import '~bootstrap/scss/bootstrap';
+
+// Plugins
+@import "~vue-snotify/styles/material";
+
+// Ours
+@import 'functional';
+@import 'core'
