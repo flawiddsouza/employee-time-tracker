@@ -68,7 +68,7 @@
             @cancel="stopTrackingConfirmModalShow = false; stopTime = null;"
         >
             <form ref="workReportForm">
-                <textarea class="input w-100p" v-model="workReport" style="height: 10em" v-focus required></textarea>
+                <textarea class="w-100p" v-model="workReport" style="height: 10em" v-focus required></textarea>
                 <!-- <rich-text class="mb-3"></rich-text> -->
             </form>
         </confirm-modal>
