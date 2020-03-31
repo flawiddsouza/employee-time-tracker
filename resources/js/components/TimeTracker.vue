@@ -1,11 +1,22 @@
 <template>
     <div>
-        <h4>{{ formatDate(today) }} (Today) <template v-if="tracking">- {{ formatTime(startTime) }} - {{ elapsedTime }}</template></h4>
+        <h4>{{ formatDate(today) }} (Today) <template v-if="tracking">- {{ formatTime(startTime) }} - <span>{{ elapsedTime }}</span></template></h4>
 
         <button class="btn btn-primary" @click="startTracking" v-if="!tracking" :disabled="!activeTrackLoaded">Start Tracking</button>
         <button class="btn btn-primary" @click="stopTrackingBegin" v-else>Stop Tracking</button>
 
-        <h4 class="mt-5">This Week</h4>
+        <h5 class="mt-5">
+            <select class="form-control d-inline-block w-auto f-i" v-model="selectedRangeFilter">
+                <option>This Week</option>
+                <option>Last Week</option>
+                <option>Custom Date Range</option>
+            </select>
+
+            <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedFromDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :max="selectedToDate">
+            <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedToDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :min="selectedFromDate">
+
+            <button type="button" class="btn btn-primary btn-lg f-i" @click="fetchTimes(true)">Load</button>
+        </h5>
 
         <table class="table table-bordered table-sm">
             <thead>
@@ -52,23 +63,21 @@
         >
             <form ref="workReportForm">
                 <textarea class="input w-100p" v-model="workReport" style="height: 10em" v-focus required></textarea>
+                <!-- <rich-text class="mb-3"></rich-text> -->
             </form>
         </confirm-modal>
     </div>
 </template>
 
 <script>
-import ConfirmModal from './ConfirmModal'
 import format from 'date-fns/format'
 import formatISO from 'date-fns/formatISO'
 import parseISO from 'date-fns/parseISO'
 import dateUtils from './../libs/dateUtils'
 import differenceInSeconds from 'date-fns/differenceInSeconds'
+import { startOfWeek, endOfWeek, subWeeks } from 'date-fns'
 
 export default {
-    components: {
-        ConfirmModal
-    },
     data() {
         return {
             tracking: false,
@@ -81,12 +90,37 @@ export default {
             stopTrackingConfirmModalShow: false,
             activeTrackLoaded: false,
             setIntervalTimer: null,
-            elapsedTime: null
+            elapsedTime: null,
+            selectedRangeFilter: 'This Week',
+            selectedFromDate: formatISO(startOfWeek(new Date(), { weekStartsOn: 1 }), { representation: 'date' }),
+            selectedToDate: formatISO(endOfWeek(new Date(), { weekStartsOn: 1 }), { representation: 'date' })
         }
     },
     computed: {
         stopTrackingMessage() {
             return 'Enter work report for ' + this.formatDate(this.startTime) + ' from ' + this.formatTime(this.startTime) + ' - ' + this.formatTime(this.stopTime) + ' - ' + this.calculateDuration(this.startTime, this.stopTime)
+        }
+    },
+    watch: {
+        selectedRangeFilter() {
+            const currentWeekStartDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+
+            if(this.selectedRangeFilter === 'This Week') {
+                this.selectedFromDate = formatISO(currentWeekStartDate, { representation: 'date' })
+                this.selectedToDate = formatISO(endOfWeek(currentWeekStartDate, { weekStartsOn: 1 }), { representation: 'date' })
+            }
+
+            if(this.selectedRangeFilter === 'Last Week') {
+                const lastWeekStartDate = startOfWeek(subWeeks(currentWeekStartDate, 1), { weekStartsOn: 1 })
+                this.selectedFromDate = formatISO(lastWeekStartDate, { representation: 'date' })
+                this.selectedToDate = formatISO(endOfWeek(lastWeekStartDate, { weekStartsOn: 1 }), { representation: 'date' })
+            }
+        },
+        selectedFromDate() {
+            this.times = []
+        },
+        selectedToDate() {
+            this.times = []
         }
     },
     methods: {
@@ -151,9 +185,19 @@ export default {
                 return null
             }
         },
-        fetchTimes() {
-            axios.get('/time-tracker/times').then(response => {
+        fetchTimes(showLoader=false) {
+            let loader = null
+
+            if(showLoader) {
+                loader = this.$loading.show()
+            }
+
+            axios.get(`/time-tracker/times?from=${this.selectedFromDate}&to=${this.selectedToDate}`).then(response => {
                 this.times = response.data
+
+                if(loader) {
+                    loader.hide()
+                }
             })
         },
         fetchActiveTrack() {

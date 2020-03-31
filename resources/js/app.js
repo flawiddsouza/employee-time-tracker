@@ -33,6 +33,8 @@ Vue.use(Snotify)
 
 Vue.component('page', require('./components/Page.vue').default)
 Vue.component('time-tracker', require('./components/TimeTracker.vue').default)
+Vue.component('confirm-modal', require('./components/ConfirmModal.vue').default)
+Vue.component('rich-text', require('./components/RichText.vue').default)
 
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'

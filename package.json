@@ -24,6 +24,8 @@
     },
     "dependencies": {
         "date-fns": "^2.11.1",
+        "tiptap": "^1.26.6",
+        "tiptap-extensions": "^1.28.6",
         "vue-loading-overlay": "^3.3.2",
         "vue-snotify": "^3.2.1"
     }

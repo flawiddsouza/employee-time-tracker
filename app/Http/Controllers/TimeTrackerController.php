@@ -8,10 +8,9 @@ use Illuminate\Support\Facades\Auth;
 
 class TimeTrackerController extends Controller
 {
-    public function getTimes()
+    public function getTimes(Request $request)
     {
-        return Time::where('user_id', Auth::id())->orderBy('start_time')
-        ->selectRaw("
+        return Time::selectRaw("
             id,
             start_time,
             stop_time,
@@ -20,6 +19,10 @@ class TimeTrackerController extends Controller
             stop_time - start_time as duration,
             EXTRACT(EPOCH FROM (stop_time - start_time)) as duration_in_seconds
         ")
+        ->where('user_id', Auth::id())
+        ->where(\DB::raw('date(start_time)'), '>=', $request->from)
+        ->where(\DB::raw('date(start_time)'), '<=', $request->to)
+        ->orderBy('start_time')
         ->get()
         ->groupBy('date');
     }
