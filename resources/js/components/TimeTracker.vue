@@ -5,51 +5,57 @@
         <button class="btn btn-primary" @click="startTracking" v-if="!tracking" :disabled="!activeTrackLoaded">Start Tracking</button>
         <button class="btn btn-primary" @click="stopTrackingBegin" v-else>Stop Tracking</button>
 
-        <h5 class="mt-5">
-            <select class="form-control d-inline-block w-auto f-i" v-model="selectedRangeFilter">
-                <option>This Week</option>
-                <option>Last Week</option>
-                <option>Custom Date Range</option>
-            </select>
+        <h5 class="mt-5 d-flex justify-content-between align-items-end">
+            <div>
+                <select class="form-control d-inline-block w-auto f-i" v-model="selectedRangeFilter">
+                    <option>This Week</option>
+                    <option>Last Week</option>
+                    <option>Custom Date Range</option>
+                </select>
 
-            <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedFromDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :max="selectedToDate">
-            <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedToDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :min="selectedFromDate">
+                <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedFromDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :max="selectedToDate">
+                <input type="date" class="form-control d-inline-block w-auto f-i" v-model="selectedToDate" required @keydown.delete.prevent :disabled="selectedRangeFilter !== 'Custom Date Range'" :min="selectedFromDate">
 
-            <button type="button" class="btn btn-primary btn-lg f-i" @click="fetchTimes(true)">Load</button>
+                <button type="button" class="btn btn-primary btn-lg f-i" @click="fetchTimes(true)">Load</button>
+            </div>
+
+            <div>
+                <button type="button" class="btn btn-primary btn-lg f-i" @click="exportTimes">Export Excel</button>
+            </div>
         </h5>
 
-        <table class="table table-bordered table-sm">
+        <table class="table table-bordered table-sm" ref="timesTable" data-cols-width="17,13,13,13,40">
             <thead>
                 <tr>
-                    <th style="width: 9em" class="text-center">Date</th>
-                    <th style="width: 7em" class="text-center">Start Time</th>
-                    <th style="width: 7em" class="text-center">End Time</th>
-                    <th style="width: 7em" class="text-center">Duration</th>
-                    <th>Work Report</th>
+                    <th style="width: 9em" class="text-center" data-a-h="center" data-f-bold="true">Date</th>
+                    <th style="width: 7em" class="text-center" data-a-h="center" data-f-bold="true">Start Time</th>
+                    <th style="width: 7em" class="text-center" data-a-h="center" data-f-bold="true">End Time</th>
+                    <th style="width: 7em" class="text-center" data-a-h="center" data-f-bold="true">Duration</th>
+                    <th data-f-bold="true">Work Report</th>
                 </tr>
             </thead>
             <tbody>
                 <template v-if="Object.keys(times).length > 0">
                     <template v-for="(timesDateWise, date) in times">
                         <tr>
-                            <td colspan="100%" class="text-center">{{ formatDate(date) }}</td>
+                            <td colspan="5" class="text-center" data-a-h="center" data-t="d" data-num-fmt="dd/mmmm/yyyy">{{ formatDate(date) }}</td>
                         </tr>
                         <tr v-for="time in timesDateWise">
-                            <td class="text-center">{{ formatDate(time.date) }}</td>
-                            <td class="text-center">{{ formatTime(time.start_time) }}</td>
-                            <td class="text-center">{{ formatTime(time.stop_time) }}</td>
-                            <td class="text-center">{{ time.duration }}</td>
-                            <td class="ws-pw">{{ time.work_report }}</td>
+                            <td class="text-center" data-a-h="center" data-t="d" data-num-fmt="dd/mmmm/yyyy">{{ formatDate(time.date) }}</td>
+                            <td class="text-center" data-a-h="center">{{ formatTime(time.start_time) }}</td>
+                            <td class="text-center" data-a-h="center">{{ formatTime(time.stop_time) }}</td>
+                            <td class="text-center" data-a-h="center">{{ time.duration }}</td>
+                            <td class="ws-pw" data-a-wrap="true">{{ time.work_report }}</td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="text-right">Total Duration</td>
-                            <td colspan="1" class="text-center">{{ calculateTotalDuration(timesDateWise) }}</td>
-                            <td colspan="100%">{{ timesDateWise.length }} entr<template v-if="timesDateWise.length > 1">ies</template><template v-else>y</template></td>
+                            <td colspan="3" class="text-right" data-a-h="right">Total Duration</td>
+                            <td colspan="1" class="text-center" data-a-h="center">{{ calculateTotalDuration(timesDateWise) }}</td>
+                            <td colspan="1">{{ timesDateWise.length }} entr<template v-if="timesDateWise.length > 1">ies</template><template v-else>y</template></td>
                         </tr>
                     </template>
                 </template>
-                <tr class="text-center" v-else>
-                    <td colspan="100%">No records found</td>
+                <tr v-else>
+                    <td colspan="100%" class="text-center" data-a-h="center">No records found</td>
                 </tr>
             </tbody>
         </table>
@@ -76,6 +82,7 @@ import parseISO from 'date-fns/parseISO'
 import dateUtils from './../libs/dateUtils'
 import differenceInSeconds from 'date-fns/differenceInSeconds'
 import { startOfWeek, endOfWeek, subWeeks } from 'date-fns'
+import TableToExcel from "@linways/table-to-excel"
 
 export default {
     data() {
@@ -227,6 +234,11 @@ export default {
             let totalDurationInSeconds = times.reduce((acc, currentItem) => acc + Number(currentItem.duration_in_seconds), 0)
 
             return dateUtils.secondsInHHMMSS(totalDurationInSeconds)
+        },
+        exportTimes() {
+            TableToExcel.convert(this.$refs.timesTable, {
+                name: `Timesheet for ${document.querySelector('#navbarDropdown').innerText.trim()} from ${this.formatDate(this.selectedFromDate)} to ${this.formatDate(this.selectedToDate)}.xlsx`
+            })
         }
     },
     created() {

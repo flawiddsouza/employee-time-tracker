@@ -23,6 +23,7 @@
         "vue-template-compiler": "^2.6.10"
     },
     "dependencies": {
+        "@linways/table-to-excel": "^1.0.4",
         "date-fns": "^2.11.1",
         "tiptap": "^1.26.6",
         "tiptap-extensions": "^1.28.6",
