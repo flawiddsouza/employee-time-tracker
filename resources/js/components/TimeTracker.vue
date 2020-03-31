@@ -55,7 +55,7 @@
                     </template>
                 </template>
                 <tr v-else>
-                    <td colspan="100%" class="text-center" data-a-h="center">No records found</td>
+                    <td colspan="5" class="text-center" data-a-h="center">No records found</td>
                 </tr>
             </tbody>
         </table>
