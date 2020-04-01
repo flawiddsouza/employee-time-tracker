@@ -10,7 +10,7 @@ class TimeTrackerController extends Controller
 {
     public function getTimes(Request $request)
     {
-        return Time::selectRaw("
+        $times = Time::selectRaw("
             id,
             start_time,
             stop_time,
@@ -18,13 +18,21 @@ class TimeTrackerController extends Controller
             date(start_time) as date,
             stop_time - start_time as duration,
             EXTRACT(EPOCH FROM (stop_time - start_time)) as duration_in_seconds
-        ")
-        ->where('user_id', Auth::id())
-        ->where(\DB::raw('date(start_time)'), '>=', $request->from)
+        ");
+
+        if($request->user_id === 'null') {
+            $times = $times->where('user_id', Auth::id());
+        } else {
+            $times = $times->where('user_id', $request->user_id);
+        }
+
+        $times = $times->where(\DB::raw('date(start_time)'), '>=', $request->from)
         ->where(\DB::raw('date(start_time)'), '<=', $request->to)
         ->orderBy('start_time')
         ->get()
         ->groupBy('date');
+
+        return $times;
     }
 
     public function getActiveTrack()

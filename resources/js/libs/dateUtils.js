@@ -1,5 +1,4 @@
 export default {
-
     secondsInHHMMSS(secs) {
         var sec_num = parseInt(secs, 10)
         var hours   = Math.floor(sec_num / 3600)
@@ -10,5 +9,4 @@ export default {
             .map(v => v < 10 ? '0' + v : v)
             .join(':')
     }
-
 }

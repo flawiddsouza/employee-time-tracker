@@ -19,4 +19,14 @@ Route::middleware('auth')->group(function() {
         Route::put('/stop/{timeId}', 'TimeTrackerController@stopTracking');
     });
 
+    // only give access if user has the role of admin
+    Route::prefix('/admin-panel')->group(function() {
+
+        Route::get('/', function() {
+            return view('admin-panel');
+        });
+
+        Route::get('/users', 'AdminPanelController@getUsers');
+    });
+
 });
