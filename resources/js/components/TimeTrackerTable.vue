@@ -3,6 +3,7 @@
         <h5 class="d-flex justify-content-between align-items-end">
             <form @submit.prevent="fetchTimes(true)">
                 <select class="form-control d-inline-block w-auto f-i" v-model="selectedUser" v-if="isAdmin" required style="width: 166px !important">
+                    <option :value="{ id: 'All', name: 'All' }">All</option>
                     <option v-for="user in users" :value="user">{{ user.name }}</option>
                 </select>
 
@@ -23,9 +24,10 @@
             </div>
         </h5>
 
-        <table class="table table-bordered table-sm" ref="timesTable" data-cols-width="17,13,13,13,40">
+        <table class="table table-bordered table-sm" ref="timesTable" :data-cols-width="(isAdmin ? '17,' : '') + '17,13,13,13,40'">
             <thead>
                 <tr>
+                    <th style="width: 9em" class="text-center" data-a-h="center" data-f-bold="true" v-if="isAdmin && selectedUser.name === 'All'">Employee Name</th>
                     <th style="width: 9em" class="text-center" data-a-h="center" data-f-bold="true">Date</th>
                     <th style="width: 7em" class="text-center" data-a-h="center" data-f-bold="true">Start Time</th>
                     <th style="width: 7em" class="text-center" data-a-h="center" data-f-bold="true">End Time</th>
@@ -36,25 +38,25 @@
             <tbody>
                 <template v-if="Object.keys(times).length > 0">
                     <template v-for="(timesDateWise, date) in times">
-                        <tr>
-                            <td colspan="5" class="text-center" data-a-h="center" data-t="d" data-num-fmt="dd/mmmm/yyyy">{{ formatDate(date) }}</td>
-                        </tr>
-                        <tr v-for="time in timesDateWise">
-                            <td class="text-center" data-a-h="center" data-t="d" data-num-fmt="dd/mmmm/yyyy">{{ formatDate(time.date) }}</td>
-                            <td class="text-center" data-a-h="center">{{ formatTime(time.start_time) }}</td>
-                            <td class="text-center" data-a-h="center">{{ formatTime(time.stop_time) }}</td>
-                            <td class="text-center" data-a-h="center">{{ time.duration }}</td>
-                            <td class="ws-pw" data-a-wrap="true">{{ time.work_report }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-right" data-a-h="right">Total Duration</td>
-                            <td colspan="1" class="text-center" data-a-h="center">{{ calculateTotalDuration(timesDateWise) }}</td>
-                            <td colspan="1">{{ timesDateWise.length }} entr<template v-if="timesDateWise.length > 1">ies</template><template v-else>y</template></td>
-                        </tr>
+                        <template v-for="timesUserWise in timesDateWise">
+                            <tr v-for="(time, index) in Object.values(timesUserWise)">
+                                <td class="text-center align-middle" data-a-h="center" data-a-v="middle" v-if="isAdmin && selectedUser.name === 'All' && index === 0" :rowspan="timesUserWise.length + (timesUserWise.length > 1 ? 1 : 0)">{{ time.employee_name }}</td>
+                                <td class="text-center align-middle" data-a-h="center" data-a-v="middle" data-t="d" data-num-fmt="dd/mmmm/yyyy" :rowspan="timesUserWise.length + (timesUserWise.length > 1 ? 1 : 0)" v-if="index === 0">{{ formatDate(time.date) }}</td>
+                                <td class="text-center" data-a-h="center">{{ formatTime(time.start_time) }}</td>
+                                <td class="text-center" data-a-h="center">{{ formatTime(time.stop_time) }}</td>
+                                <td class="text-center" data-a-h="center">{{ time.duration }}</td>
+                                <td class="ws-pw" data-a-wrap="true">{{ time.work_report }}</td>
+                            </tr>
+                            <tr v-if="timesUserWise.length > 1">
+                                <td colspan="2" class="text-right" data-a-h="right">Total Duration</td>
+                                <td colspan="1" class="text-center" data-a-h="center">{{ calculateTotalDuration(timesUserWise) }}</td>
+                                <td colspan="1">{{ timesUserWise.length }} entr<template v-if="timesUserWise.length > 1">ies</template><template v-else>y</template></td>
+                            </tr>
+                        </template>
                     </template>
                 </template>
                 <tr v-else>
-                    <td colspan="5" class="text-center" data-a-h="center">No records found</td>
+                    <td :colspan="isAdmin && selectedUser.id === 'All' ? 6 : 5" class="text-center" data-a-h="center">No records found</td>
                 </tr>
             </tbody>
         </table>
@@ -71,8 +73,8 @@ import TableToExcel from "@linways/table-to-excel"
 
 export default {
     props: {
+        isAdmin: Boolean,
         fetchTimesOnCreated: Boolean,
-        isAdmin: Boolean
     },
     mixins: [
         dateUtilsMixin
@@ -107,6 +109,9 @@ export default {
         },
         selectedToDate() {
             this.times = []
+        },
+        selectedUser() {
+            this.times = []
         }
     },
     methods: {
@@ -132,7 +137,7 @@ export default {
         },
         exportTimes() {
             TableToExcel.convert(this.$refs.timesTable, {
-                name: `Timesheet for ${this.selectedUser ? this.selectedUser.name : document.querySelector('#navbarDropdown').innerText.trim()} from ${this.formatDate(this.selectedFromDate)} to ${this.formatDate(this.selectedToDate)}.xlsx`
+                name: `Timesheet for ${this.isAdmin ? this.selectedUser.name : document.querySelector('#navbarDropdown').innerText.trim()} from ${this.formatDate(this.selectedFromDate)} to ${this.formatDate(this.selectedToDate)}.xlsx`
             })
         },
         fetchUsers() {
@@ -142,12 +147,13 @@ export default {
         }
     },
     created() {
-        if(this.fetchTimesOnCreated) {
-            this.fetchTimes()
+        if(this.isAdmin) {
+            this.selectedUser = { id: 'All', name: 'All' }
+            this.fetchUsers()
         }
 
-        if(this.isAdmin) {
-            this.fetchUsers()
+        if(this.fetchTimesOnCreated) {
+            this.fetchTimes()
         }
     }
 }

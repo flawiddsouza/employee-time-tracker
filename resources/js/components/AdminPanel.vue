@@ -1,5 +1,5 @@
 <template>
     <div>
-        <time-tracker-table :fetch-times-on-created="false" :is-admin="true"></time-tracker-table>
+        <time-tracker-table :is-admin="true" :fetch-times-on-created="true"></time-tracker-table>
     </div>
 </template>
