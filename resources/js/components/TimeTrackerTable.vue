@@ -8,6 +8,7 @@
                 </select>
 
                 <select class="form-control d-inline-block w-auto f-i" v-model="selectedRangeFilter">
+                    <option v-if="isAdmin">Today</option>
                     <option>This Week</option>
                     <option>Last Week</option>
                     <option>Custom Date Range</option>
@@ -71,6 +72,10 @@ import dateUtils from './../libs/dateUtils'
 import dateUtilsMixin from './../mixins/dateUtilsMixin'
 import TableToExcel from "@linways/table-to-excel"
 
+const today = formatISO(new Date(), { representation: 'date' })
+const currentWeekStartDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+const currentWeekEndDate = endOfWeek(currentWeekStartDate, { weekStartsOn: 1 })
+
 export default {
     props: {
         isAdmin: Boolean,
@@ -83,19 +88,23 @@ export default {
         return {
             users: [],
             selectedUser: null,
-            selectedRangeFilter: 'This Week',
-            selectedFromDate: formatISO(startOfWeek(new Date(), { weekStartsOn: 1 }), { representation: 'date' }),
-            selectedToDate: formatISO(endOfWeek(new Date(), { weekStartsOn: 1 }), { representation: 'date' }),
+            selectedRangeFilter: this.isAdmin ? 'Today' : 'This Week',
+            selectedFromDate: this.isAdmin ? today : formatISO(currentWeekStartDate, { representation: 'date' }),
+            selectedToDate: this.isAdmin ? today : formatISO(currentWeekEndDate, { representation: 'date' }),
             times: []
         }
     },
     watch: {
         selectedRangeFilter() {
-            const currentWeekStartDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+
+            if(this.selectedRangeFilter === 'Today') {
+                this.selectedFromDate = today
+                this.selectedToDate = today
+            }
 
             if(this.selectedRangeFilter === 'This Week') {
                 this.selectedFromDate = formatISO(currentWeekStartDate, { representation: 'date' })
-                this.selectedToDate = formatISO(endOfWeek(currentWeekStartDate, { weekStartsOn: 1 }), { representation: 'date' })
+                this.selectedToDate = formatISO(currentWeekEndDate, { representation: 'date' })
             }
 
             if(this.selectedRangeFilter === 'Last Week') {
