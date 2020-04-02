@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Time;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Auth;
 
 class TimeTrackerController extends Controller
 {
@@ -20,10 +20,10 @@ class TimeTrackerController extends Controller
             EXTRACT(EPOCH FROM (stop_time - start_time)) as duration_in_seconds
         ");
 
-        if($request->user_id === 'null') {
-            $times = $times->where('user_id', Auth::id());
-        } else {
+        if(Auth::user()->can('access-admin-panel') && $request->user_id) {
             $times = $times->where('user_id', $request->user_id);
+        } else {
+            $times = $times->where('user_id', Auth::id());
         }
 
         $times = $times->where(\DB::raw('date(start_time)'), '>=', $request->from)

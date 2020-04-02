@@ -117,7 +117,7 @@ export default {
                 loader = this.$loading.show()
             }
 
-            axios.get(`/time-tracker/times?user_id=${this.selectedUser ? this.selectedUser.id : null}&from=${this.selectedFromDate}&to=${this.selectedToDate}`).then(response => {
+            axios.get(`/time-tracker/times?${this.selectedUser ? `user_id=${this.selectedUser.id}&` : ''}from=${this.selectedFromDate}&to=${this.selectedToDate}`).then(response => {
                 this.times = response.data
 
                 if(loader) {

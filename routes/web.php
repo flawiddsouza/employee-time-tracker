@@ -20,13 +20,14 @@ Route::middleware('auth')->group(function() {
     });
 
     // only give access if user has the role of admin
-    Route::prefix('/admin-panel')->group(function() {
+    Route::prefix('/admin-panel')->middleware('can:access-admin-panel')->group(function() {
 
         Route::get('/', function() {
             return view('admin-panel');
         });
 
         Route::get('/users', 'AdminPanelController@getUsers');
+
     });
 
 });
