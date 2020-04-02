@@ -32,15 +32,20 @@ class TimeTrackerController extends Controller
         }
 
         $times = $times->where(\DB::raw('date(times.start_time)'), '>=', $request->from)
-        ->where(\DB::raw('date(times.start_time)'), '<=', $request->to)
-        ->orderBy(\DB::raw('date(times.start_time)'))
-        ->orderBy('users.name')
-        ->orderBy('times.start_time')
-        ->get()
-        ->groupBy('date');
+        ->where(\DB::raw('date(times.start_time)'), '<=', $request->to);
+
+        if(!isset($request->is_weekly)) {
+            $times = $times->orderBy(\DB::raw('date(times.start_time)'))->orderBy('users.name');
+        } else {
+            $times = $times->orderBy('users.name')->orderBy(\DB::raw('date(times.start_time)'));
+        }
+
+        $times = $times->orderBy('times.start_time')->get();
+
+        $times = $times->groupBy(!isset($request->is_weekly) ? 'date' : 'employee_name');
 
         foreach($times as $date => $timesDateWise) {
-            $times[$date] = $timesDateWise->groupBy('employee_name');
+            $times[$date] = $timesDateWise->groupBy(!isset($request->is_weekly) ? 'employee_name' : 'date');
         }
 
         return $times;
