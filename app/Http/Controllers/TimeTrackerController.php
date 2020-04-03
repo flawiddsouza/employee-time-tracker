@@ -58,10 +58,19 @@ class TimeTrackerController extends Controller
 
     public function startTracking(Request $request)
     {
-        return Time::create([
-            'user_id' => Auth::id(),
-            'start_time' => $request->start_time
-        ])->id;
+        $timeOverlaps = Time::where('user_id', Auth::id())
+        ->where('start_time', '<=', $request->start_time)
+        ->where('stop_time', '>=', $request->start_time)
+        ->count() > 0;
+
+        if(!$timeOverlaps) {
+            return Time::create([
+                'user_id' => Auth::id(),
+                'start_time' => $request->start_time
+            ])->id;
+        } else {
+            return response('Given time overlaps with an existing entry', 400);
+        }
     }
 
     public function stopTracking(Request $request, $timeId)

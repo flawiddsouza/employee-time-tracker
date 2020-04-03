@@ -2,7 +2,12 @@
     <div>
         <h4>{{ formatDate(today) }} (Today) <template v-if="tracking">- {{ formatTime(startTime) }} - <span>{{ elapsedTime }}</span></template></h4>
 
-        <button class="btn btn-primary" @click="startTracking" v-if="!tracking" :disabled="!activeTrackLoaded">Start Tracking</button>
+        <template v-if="!tracking">
+            <form @submit.prevent="startTracking">
+                <input type="time" min="07:00" :max="currentTime" :value="selectedStartTime" required ref="selectedStartTimeInput" class="form-control d-inline-block w-auto" :disabled="!activeTrackLoaded">
+                <button class="btn btn-primary" :disabled="!activeTrackLoaded">Start Tracking</button>
+            </form>
+        </template>
         <button class="btn btn-primary" @click="stopTrackingBegin" v-else>Stop Tracking</button>
 
         <time-tracker-table class="mt-5" ref="timeTable" :fetch-times-on-created="true"></time-tracker-table>
@@ -23,8 +28,10 @@
 </template>
 
 <script>
+import format from 'date-fns/format'
 import formatISO from 'date-fns/formatISO'
 import parseISO from 'date-fns/parseISO'
+import set from 'date-fns/set'
 import differenceInSeconds from 'date-fns/differenceInSeconds'
 import dateUtils from './../libs/dateUtils'
 import dateUtilsMixin from './../mixins/dateUtilsMixin'
@@ -44,7 +51,9 @@ export default {
             stopTrackingConfirmModalShow: false,
             activeTrackLoaded: false,
             setIntervalTimer: null,
-            elapsedTime: null
+            elapsedTime: null,
+            selectedStartTime: format(new Date(), 'HH:mm'),
+            currentTime: format(new Date(), 'HH:mm')
         }
     },
     computed: {
@@ -58,7 +67,10 @@ export default {
             // I'm just using it as a refresh trigger, in case this.today is outdated
             this.today = formatISO(new Date())
 
-            this.startTime = formatISO(new Date())
+            this.selectedStartTime = this.$refs.selectedStartTimeInput.value
+            const selectedStartTimeAsDateObj = this.$refs.selectedStartTimeInput.valueAsDate
+            const startDateTime = set(new Date(), { hours: selectedStartTimeAsDateObj.getUTCHours(), minutes: selectedStartTimeAsDateObj.getUTCMinutes() })
+            this.startTime = formatISO(startDateTime)
 
             let loader = this.$loading.show()
 
@@ -70,6 +82,10 @@ export default {
                 loader.hide()
                 this.$snotify.success('Started tracking')
                 this.$refs.timeTable.fetchTimes()
+            }).catch(error => {
+                this.startTime = null
+                this.$snotify.error(error.response.data)
+                loader.hide()
             })
         },
         stopTrackingBegin() {
@@ -87,7 +103,11 @@ export default {
                 stop_time: this.stopTime,
                 work_report: this.workReport
             }).then(() => {
+                // reset selectedStartTime on stop traking
+                this.selectedStartTime = this.currentTime
+
                 this.tracking = false
+
                 this.stopTrackingConfirmModalShow = false
                 this.currentTimeId = null
                 this.startTime = null
@@ -130,6 +150,8 @@ export default {
             } else {
                 this.elapsedTime = null
             }
+
+            this.currentTime = format(new Date(), 'HH:mm')
         }
     },
     created() {
