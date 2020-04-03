@@ -1,0 +1,7 @@
+user
+    ~ give option to the user to delete an entry, if it's not been frozen
+
+admin
+    ~ option to merge times of a single day of an employee
+        what this will do is take the start_time of the lowest selected record and the stop_time of the highest selected record and concatenate the work reports with a new line and create a single record for them
+    ~ option to edit a single time record (start_time, stop_time & work_report)
