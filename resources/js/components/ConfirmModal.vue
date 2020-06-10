@@ -1,7 +1,6 @@
 <template>
     <div class="modal2">
         <div class="modal-window">
-            <p style="font-size: 1.2em"><template v-if="!message">Are you sure?</template><template v-else>{{ message }}</template></p>
             <div class="ta-l" style="margin-top: -0.5em" v-if="$slots.default">
                 <slot></slot>
             </div>
